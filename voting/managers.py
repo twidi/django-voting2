@@ -1,6 +1,6 @@
 from django.db import models, IntegrityError
 from django.db import connection
-from django.db.models import Avg, Count, Sum
+from django.db.models import Avg, Count, Sum, get_model
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -40,19 +40,33 @@ class VoteManager(models.Manager):
     def get_for_user_in_bulk(self, user, objects):
         """
         Get dictinary mapping object to vote for user on given objects.
+        Objects can be the string representation of a model
+        like 'appname.Modelname'
         """
-        object_ids = [o._get_pk_val() for o in objects]
-        if not object_ids:
-            return {}
         if not user.is_authenticated():
             return {}
-
         queryset = self.filter( user=user )
         queryset = queryset.filter( is_archived=False )
-        ctype = ContentType.objects.get_for_model(objects[0])
-        queryset = queryset.filter(content_type=ctype, object_id__in=object_ids)
-        votes = list(queryset)
-        vote_dict = dict([( vote.object_id, vote ) for vote in votes ])
+
+        # test if it's a model
+        if isinstance(objects, (str, unicode)):
+            try:
+                model = get_model(*objects.split('.'))
+                if not model:
+                    return {}
+            except:
+                return {}
+            else:
+                ctype = ContentType.objects.get_for_model(model)
+                queryset = self.filter(content_type=ctype)
+        else:
+            object_ids = [o._get_pk_val() for o in objects]
+            if not object_ids:
+                return {}
+            ctype = ContentType.objects.get_for_model(objects[0])
+            queryset = queryset.filter(content_type=ctype, object_id__in=object_ids)
+
+        vote_dict = dict([( vote.object_id, vote ) for vote in queryset ])
         return vote_dict
 
     def get_user_votes(self, user, Model=None, obj=None):
@@ -96,12 +110,26 @@ class VoteManager(models.Manager):
         """
         Get a dictinary mapping objects ids to dictinary
         which maps direction to votecount
+        Objects can be the string representation of a model
+        like 'appname.Modelname'
         """
-        object_ids = [o._get_pk_val() for o in objects]
-        if not object_ids:
-            return {}
-        ctype = ContentType.objects.get_for_model(objects[0])
-        queryset = self.filter(content_type=ctype, object_id__in=object_ids)
+        # test if it's a model
+        if isinstance(objects, (str, unicode)):
+            try:
+                model = get_model(*objects.split('.'))
+                if not model:
+                    return {}
+            except:
+                return {}
+            else:
+                ctype = ContentType.objects.get_for_model(model)
+                queryset = self.filter(content_type=ctype)
+        else:
+            object_ids = [o._get_pk_val() for o in objects]
+            if not object_ids:
+                return {}
+            ctype = ContentType.objects.get_for_model(objects[0])
+            queryset = self.filter(content_type=ctype, object_id__in=object_ids)
 
         if not all: # only pick active votes
             queryset = queryset.filter(is_archived=False)

@@ -119,6 +119,7 @@ def get_votes_by_user(parser, token):
     Retrieves the votes cast by a user on a list of objects as a
     dictionary keyed with object ids and stores it in a context
     variable.
+    The list of objects can be a model name: 'appname.Modelname'
 
     Example usage::
 
@@ -157,6 +158,7 @@ def get_vote_counts_for_objects(parser, token):
     """
     Retrieves the total vote count for a list of objects and the number of
     votes they have received and stores them in a context variable.
+    The list of objects can be a model name: 'appname.Modelname'
 
     Example usage::
 
