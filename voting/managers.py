@@ -58,7 +58,7 @@ class VoteManager(models.Manager):
                 return {}
             else:
                 ctype = ContentType.objects.get_for_model(model)
-                queryset = self.filter(content_type=ctype)
+                queryset = queryset.filter(content_type=ctype)
         else:
             object_ids = [o._get_pk_val() for o in objects]
             if not object_ids:
